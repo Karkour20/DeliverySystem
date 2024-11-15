@@ -1,4 +1,5 @@
 import 'package:durub_ali/durub/colors.dart';
+import 'package:durub_ali/screens/AreaManagement/AreaManagement.dart';
 import 'package:durub_ali/screens/ManageShipments/ManageShipmentsScreen.dart';
 import 'package:durub_ali/screens/dashboard/drawer/SideDrawer.dart';
 import 'package:durub_ali/screens/dashboard/widget/customBox.dart';
@@ -16,7 +17,7 @@ class dashboard extends StatefulWidget {
 }
 
 class _dashboardState extends State<dashboard> {
-  int selectedIndex = 0;
+  int selectedIndex = 1;
 
   void onTileSelected(int index) {
     setState(() {
@@ -38,7 +39,8 @@ class _dashboardState extends State<dashboard> {
               children: [
                 dashboardScreen(),
                 ManageShipmentsScreen(),
-                UsersScreen()
+                UsersScreen(),
+                AreaManagement()
               ],
             ),
           ),

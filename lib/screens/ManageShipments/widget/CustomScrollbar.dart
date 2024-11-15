@@ -11,7 +11,7 @@ class CustomScrollbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return   AdaptiveScrollbar(
+    return AdaptiveScrollbar(
         underColor: Colors.blueGrey.withOpacity(0.3),
     sliderDefaultColor: Colors.grey.withOpacity(0.7),
     sliderActiveColor: Colors.grey,
