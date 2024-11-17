@@ -1,13 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:durub_ali/data_sources/order_data_source.dart';
 import 'package:durub_ali/durub/durub.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/CustomButton.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/CustomContainer.dart';
-import 'package:durub_ali/screens/ManageShipments/widget/CustomScrollbar.dart';
+import 'package:durub_ali/models/order_model.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/CustomSwitchBar.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/Customtext.dart';
+import 'package:durub_ali/screens/ManageShipments/widget/buildGridColumn.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/customFilterOptions.dart';
 import 'package:durub_ali/screens/dashboard/header/header.dart';
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 final List<String> dates = [
   "تاريخ الحجز",
   "تاريخ التوصيل",
@@ -26,51 +29,81 @@ class ManageShipmentsScreen extends StatefulWidget {
 }
 
 class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
-  final ScrollController _horizontalScrollController = ScrollController();
-  final ScrollController _verticalScrollController = ScrollController();
-  final int _limitIncrement = 20;
-  int _limit = 20;
+  // final ScrollController _horizontalScrollController = ScrollController();
+  // final ScrollController _verticalScrollController = ScrollController();
+
+  DocumentSnapshot? _lastDocument;
   bool _isLoading = false;
   bool _isSwitched = true;
-  List<DocumentSnapshot> orders = [];
+  List<order_model> _orders = [];
+  int _batchSize = 20;
 
   @override
   void initState() {
+    _orderDataSource = OrderDataSource(orders: _orders);
     super.initState();
-    _verticalScrollController.addListener(_onScroll);
-    _fetchUsers();
+    _fetchOrders();
   }
 
-  void _onScroll() {
-    if (_verticalScrollController.position.pixels == _verticalScrollController.position.maxScrollExtent) {
-      _fetchMoreUsers();
+  Future<void> _fetchOrders() async {
+    if (_isLoading) return;
+
+
+   if(_batchSize==20){
+     setState(() {
+       _isLoading = true;
+     });
+   }
+
+
+    Query query = FirebaseFirestore.instance
+        .collection('orders')
+        .limit(_batchSize);
+
+    if (_lastDocument != null) {
+      query = query.startAfterDocument(_lastDocument!);
+    }
+
+    QuerySnapshot snapshot = await query.get();
+    if (snapshot.docs.isNotEmpty) {
+      _lastDocument = snapshot.docs.last;
+      List<order_model> newOrders = snapshot.docs.map((doc) {
+        return order_model(
+          orderNumber: doc['orderNumber'].toString(),
+          weight: doc['weight'].toString(),
+          serviceType: doc['serviceType'].toString(),
+          deliveryCost: doc['deliveryCost'].toString(),
+          recipientName: doc['recipientName'].toString(),
+          paymentMethod: doc['paymentMethod'].toString(),
+          parcelCount: doc['parcelCount'].toString(),
+          notes: doc['notes'].toString(),
+          username: doc['username'].toString(),
+          lastUpdated: doc['lastUpdated'].toString(),
+        );
+      }).toList();
+
+      setState(() {
+        _orders.addAll(newOrders);
+        _orderDataSource = OrderDataSource(orders: _orders);
+      });
+    }
+    if(_batchSize==20) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-  Future<void> _fetchUsers() async {
-    setState(() {
-      _isLoading = true;
-    });
 
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('orders')
-        .limit(_limit)
-        .get().catchError((error){});
-
-
-    setState(() {
-      orders = snapshot.docs;
-      _isLoading = false;
-    });
-  }
-  Future<void> _fetchMoreUsers() async {
-    setState(() {
-      _limit += _limitIncrement;
-    });
-    await _fetchUsers();
+  Future<void> _handleLoadMore() async {
+    _batchSize+=10;
+    await _fetchOrders();
   }
 
 
+
+
+  late OrderDataSource _orderDataSource;
 
   @override
   Widget build(BuildContext context) {
@@ -78,14 +111,21 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
       const header(),
       Padding(
         padding: const EdgeInsets.only(top: 20,right: 30,left: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child:Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          runAlignment: WrapAlignment.spaceBetween,
+          runSpacing: 5.0,
+          spacing: 5.0,
           children: [
            const Text("إدارة الطرود"),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(width: 30,),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              runAlignment: WrapAlignment.center,
               children: [
-                const Icon(Icons.refresh),
+                IconButton(onPressed: (){
+
+                }, icon: Icon(Icons.refresh)),
                 CustomSwitchBar(
                   label: 'شريط الأدوات',
                   value: _isSwitched,
@@ -142,12 +182,10 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       PopupMenuButton(
-                        onSelected: (value) {
-                        },
+                        onSelected: (value) {},
                         itemBuilder: (context) => dates.asMap().entries.map((entry) {
                           int index = entry.key;
                           String date = entry.value;
-
                           return PopupMenuItem<int>(
                             value: index,
                             child: Row(
@@ -180,6 +218,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
                   child: GestureDetector(
                     onTap: _pickDate,
                     child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.arrow_drop_down, color: Colors.black54),
                         SizedBox(width: 4.0),
@@ -196,7 +235,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
                     ),
                   ),
                 ),
-                customFilterOptions(),
+                const customFilterOptions(),
                 CustomContainer(
                   child: Container(
                     width: 120,
@@ -222,7 +261,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
       Container(
         padding: const EdgeInsets.all(10.0),
         decoration: BoxDecoration(
-          color: Color(0xfffefaf3),
+          color: const Color(0xfffefaf3),
           borderRadius: BorderRadius.circular(15)
         ),
         child: Wrap(
@@ -272,7 +311,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
               height: 30.0,
               isLoading: false,
             ),
-            SizedBox(width: 20,),
+            const SizedBox(width: 20,),
 
             ...list_btn.asMap().entries.map((entry) {
               int index = entry.key;
@@ -299,48 +338,52 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
       ),
       Expanded(
         child: Container(
-          padding: const EdgeInsets.only(
-              top: 20,
-          right: 15,
-          bottom: 50),
-          alignment: Alignment.topRight,
-          child:CustomScrollbar(
-            verticalScrollController: _verticalScrollController,
-            horizontalScrollController: _horizontalScrollController,
-            child: DataTable(
-              dividerThickness: 1,
-              columns: const <DataColumn>[
-                DataColumn(label: Text('رقم الطلب')),
-                DataColumn(label: Text('وزن الطرد(كغم)')),
-                DataColumn(label: Text('نوع الخدمة')),
-                DataColumn(label: Text('السعر')),
-                DataColumn(label: Text('اسم المستلم')),
-                DataColumn(label: Text('طريقة الدفع')),
-                DataColumn(label: Text('عدد الطرود')),
-                DataColumn(label: Text('ملاحظات')),
-                DataColumn(label: Text('اسم المستخدم')),
-                DataColumn(label: Text('آخر تحديث')),
-                DataColumn(label: Text('رقم الشحنة')),
-              ],
-              rows: orders.map<DataRow>((user) {
-                return DataRow(
-                  cells: [
-                    DataCell(Customtext(title:user['orderNumber'].toString())),
-                    DataCell(Customtext(title:"${user['weight']!="" ? user['weight']:"0"}")),
-                    DataCell(Customtext(title:user['serviceType'])),
-                    DataCell(Customtext(title:"${user['deliveryCost']} JOD")),
-                    DataCell(Customtext(title:user['recipientName'])),
-                    DataCell(Customtext(title:user['paymentMethod'])),
-                    DataCell(Customtext(title:user['parcelCount'].toString())),
-                    DataCell(Customtext(title:user['notes'] ?? '')),
-                    DataCell(Customtext(title:user['username'])),
-                    DataCell(Customtext(title:user['lastUpdated'])),
-                    DataCell(Customtext(title: user['orderId'],)),
-                  ],
-                );
-              }).toList(),
-            ),
-          )
+              padding: const EdgeInsets.only(top: 20, right: 15, bottom: 50),
+              alignment: Alignment.topRight,
+              child:_isLoading && _orders.isEmpty
+                  ? const Center(child: CircularProgressIndicator()) :
+              SfDataGrid(
+                source: _orderDataSource,
+                showCheckboxColumn: true,
+                isScrollbarAlwaysShown:true,
+                columnWidthMode: ColumnWidthMode.auto,
+                selectionMode: SelectionMode.multiple,
+                frozenColumnsCount: 2,
+                allowSorting: true,
+                allowMultiColumnSorting: true,
+                loadMoreViewBuilder: (BuildContext context, LoadMoreRows loadMoreRows) {
+                  return FutureBuilder<void>(
+                    future: _handleLoadMore(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        loadMoreRows();
+                      }
+                      return Container(
+                        height: 60.0,
+                        alignment: Alignment.center,
+                        child: snapshot.connectionState == ConnectionState.waiting
+                            ? const CircularProgressIndicator()
+                            : const Text('تم تحميل جميع البيانات'),
+                      );
+                    },
+                  );
+                },
+                columns: <GridColumn>[
+                  buildGridColumn(columnName: 'orderNumber', labelText: 'رقم الطلب'),
+                  buildGridColumn(columnName: 'weight', labelText: 'وزن الطرد (كغم)'),
+                  buildGridColumn(columnName: 'serviceType', labelText: 'نوع الخدمة'),
+                  buildGridColumn(columnName: 'deliveryCost', labelText: 'السعر'),
+                  buildGridColumn(columnName: 'recipientName', labelText: 'اسم المستلم'),
+                  buildGridColumn(columnName: 'paymentMethod', labelText: 'طريقة الدفع'),
+                  buildGridColumn(columnName: 'parcelCount', labelText: 'عدد الطرود'),
+                  buildGridColumn(columnName: 'notes', labelText: 'ملاحظات'),
+                  buildGridColumn(columnName: 'username', labelText: 'اسم المستخدم'),
+                  buildGridColumn(columnName: 'lastUpdated', labelText: 'آخر تحديث'),
+                ],
+              )
+
+
+
         ),
       )
     ],);
@@ -373,3 +416,6 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
     'تحديد مسار السائق'
   ];
 }
+
+
+
