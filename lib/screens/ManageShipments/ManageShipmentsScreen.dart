@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:durub_ali/data_sources/order_data_source.dart';
+import 'package:durub_ali/durub/colors.dart';
 import 'package:durub_ali/durub/durub.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/CustomButton.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/CustomContainer.dart';
@@ -8,7 +9,9 @@ import 'package:durub_ali/screens/ManageShipments/widget/CustomSwitchBar.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/Customtext.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/buildGridColumn.dart';
 import 'package:durub_ali/screens/ManageShipments/widget/customFilterOptions.dart';
+import 'package:durub_ali/screens/ManageShipments/widget/fillters_widget.dart';
 import 'package:durub_ali/screens/dashboard/header/header.dart';
+import 'package:durub_ali/screens/widgets/CustomTextField.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 final List<String> dates = [
@@ -125,7 +128,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
               children: [
                 IconButton(onPressed: (){
 
-                }, icon: Icon(Icons.refresh)),
+                }, icon: const Icon(Icons.refresh)),
                 CustomSwitchBar(
                   label: 'شريط الأدوات',
                   value: _isSwitched,
@@ -237,9 +240,9 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
                 ),
                 const customFilterOptions(),
                 CustomContainer(
-                  child: Container(
+                  child: const SizedBox(
                     width: 120,
-                    child: const TextField(
+                    child: TextField(
                       decoration: InputDecoration(
                         labelText: 'البحث',
                         labelStyle: TextStyle(
@@ -274,7 +277,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
               onPressed: () {
 
               },
-              color: Colors.green,
+              color: btn_primary,
               textColor: Colors.white,
               fontSize: 12.0,
               borderRadius: 10.0,
@@ -288,7 +291,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
               onPressed: () {
 
               },
-              color: Colors.green,
+              color: btn_primary,
               textColor: Colors.white,
               fontSize: 12.0,
               borderRadius: 10.0,
@@ -302,7 +305,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
               onPressed: () {
 
               },
-              color: Colors.green,
+              color: btn_primary,
               textColor: Colors.white,
               fontSize: 12.0,
               borderRadius: 10.0,
@@ -322,7 +325,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
                 onPressed: () {
 
                 },
-                color: Colors.green,
+                color: btn_primary,
                 textColor: Colors.white,
                 fontSize: 12.0,
                 borderRadius: 10.0,
@@ -336,6 +339,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
           ],
         ),
       ),
+      fillters_widget(),
       Expanded(
         child: Container(
               padding: const EdgeInsets.only(top: 20, right: 15, bottom: 50),
@@ -415,6 +419,7 @@ class _ManageShipmentsScreenState extends State<ManageShipmentsScreen> {
     'تصدير الى شريك',
     'تحديد مسار السائق'
   ];
+
 }
 
 
